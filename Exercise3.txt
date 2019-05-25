@@ -1,0 +1,276 @@
+1. Manage(create, update, delete) categories, articles, comments, and users
+mysql> Create table Users(
+    -> id INT Auto_increment,
+    -> name varchar(20),
+    -> type ENUM('admin', 'user'),
+    -> PRIMARY KEY(id))
+    -> engine = INNODB;
+Query OK, 0 rows affected (0.13 sec)
+
+mysql>
+mysql> Create table Categories(
+    -> id INT Auto_increment,
+    -> category varchar(20),
+    -> PRIMARY KEY(id))
+    -> engine = INNODB;
+Query OK, 0 rows affected (0.07 sec)
+
+mysql> Create table Articles(
+    -> id INT Auto_increment,
+    -> Article varchar(60),
+    -> User_id int,
+    -> category_id int,
+    -> Primary Key(id),
+    -> Foreign Key(User_id) references Users(id),
+    -> Foreign Key(category_id) references Categories(id))
+    -> engine = INNODB;
+Query OK, 0 rows affected (0.26 sec)
+
+mysql> Create Table Comments(
+    -> id INT Auto_increment,
+    -> Comment varchar(60),
+    -> user_id int,
+    -> article_id int,
+    -> Primary key(id),
+    -> Foreign Key(User_id) references Users(id),
+    -> Foreign Key(article_id) references Articles(id))
+    -> engine = INNODB;
+Query OK, 0 rows affected (0.13 sec)
+
+mysql> Insert Into Users(name, type)
+    -> Values ('User1','admin'),
+    -> ('User2','admin'),
+    -> ('User3','user'),
+    -> ('User4','user'),
+    -> ('User5','user'),
+    -> ('User6','admin'),
+    -> ('User7','admin'),
+    -> ('User8','user'),
+    -> ('User9','admin'),
+    -> ('User10','admin');
+Query OK, 10 rows affected (0.14 sec)
+Records: 10  Duplicates: 0  Warnings: 0
+
+mysql> Insert Into Categories(Category)
+    -> Values ('Movies'),
+    -> ('Politics'),
+    -> ('Social Issues'),
+    -> ('Travel');
+Query OK, 4 rows affected (0.12 sec)
+Records: 4  Duplicates: 0  Warnings: 0
+
+mysql> Insert Into Articles ( Article, User_id, Category_id)
+    -> Values ('Article1',3,1),
+    -> ('Article2',1,2),
+    -> ('Article3',8,3),
+    -> ('Article4',5,4),
+    -> ('Article5',6,4),
+    -> ('Article6',7,3),
+    -> ('Article7',2,2),
+    -> ('Article8',3,1),
+    -> ('Article9',3,2),
+    -> ('Article10',5,3),
+    -> ('Article11',7,4),
+    -> ('Article12',6,1),
+    -> ('Article13',4,2),
+    -> ('Article14',9,2),
+    -> ('Article15',10,3),
+    -> ('Article16',10,4),
+    -> ('Article16',8,3),
+    -> ('Article18',9,4),
+    -> ('Article19',2,1),
+    -> ('Article20',6,4),
+    -> ('Article21',5,1),
+    -> ('Article22',5,4),
+    -> ('Article23',7,1),
+    -> ('Article24',8,2),
+    -> ('Article25',10,3);
+Query OK, 25 rows affected (0.14 sec)
+Records: 25  Duplicates: 0  Warnings: 0
+
+mysql> Insert Into Comments ( Comment, User_id, Article_id)
+    -> Values ('Good',3,2),
+    -> ('Great',4,1),
+    -> ('Nice',5,8),
+    -> ('Worst',3,20),
+    -> ('Bad',7,1),
+    -> ('Pathetic',10,6),
+    -> ('Must Read',1,10),
+    -> ('Fine',1,15),
+    -> ('Awesome',9,3),
+    -> ('Not Recommneded',3,24),
+    -> ('Worth Reading',8,15),
+    -> ('Amazing',10,11),
+    -> ('Not Suitable', 2, 15);
+Query OK, 13 rows affected (0.06 sec)
+Records: 13  Duplicates: 0  Warnings: 0
+
+mysql> Update Articles
+    -> Set Articles.Article = 'Article17'
+    -> where Articles.id = 17;
+Query OK, 1 row affected (0.08 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+2. Select all articles whose author's name is user3 (Do this exercise using variable also).
+
+mysql> select Article from Articles join Users
+    -> where Articles.user_id=Users.id and Users.name='User3';
++----------+
+| Article  |
++----------+
+| Article1 |
+| Article8 |
+| Article9 |
++----------+
+3 rows in set (0.04 sec)
+
+mysql> Set @user_three = 'User3';
+Query OK, 0 rows affected (0.11 sec)
+
+mysql> select Article from Articles join Users
+    -> where Articles.user_id=Users.id and Users.name = @user_three;
++----------+
+| Article  |
++----------+
+| Article1 |
+| Article8 |
+| Article9 |
++----------+
+3 rows in set (0.03 sec)
+
+3. For all the articles being selected above, select all the articles and also the comments associated with those articles in a single query (Do this using subquery also)
+
+mysql> SELECT Article, GROUP_CONCAT(Comment) AS 'Comments by Users'
+    -> FROM articles JOIN users
+    -> ON articles.user_id=users.id LEFT JOIN comments
+    -> ON comments.article_id=articles.id
+    -> WHERE users.name = @user_three
+    -> GROUP BY articles.article;
++----------+-------------------+
+| Article  | Comments by Users |
++----------+-------------------+
+| Article1 | Bad,Great         |
+| Article8 | Nice              |
+| Article9 | NULL              |
++----------+-------------------+
+3 rows in set (0.00 sec)
+
+mysql> SELECT Article, GROUP_CONCAT(Comment) AS 'Comments by Users'
+    -> From Articles Left Join Comments
+    -> on Articles.id = Comments.Article_id
+    -> where articles.user_id = ( select id from Users where name = 'User3')
+    -> Group by articles.article;
++----------+-------------------+
+| Article  | Comments by Users |
++----------+-------------------+
+| Article1 | Great,Bad         |
+| Article8 | Nice              |
+| Article9 | NULL              |
++----------+-------------------+
+3 rows in set (0.00 sec)
+
+4. Write a query to select all articles which do not have any comments (Do using subquery also)
+
+mysql> Select article as 'Articles with No Comment'
+    -> from articles left join comments
+    -> on articles.id = comments.article_id
+    -> group by articles.id
+    -> having count(comment) = 0;
++--------------------------+
+| Articles with No Comment |
++--------------------------+
+| Article4                 |
+| Article5                 |
+| Article7                 |
+| Article9                 |
+| Article12                |
+| Article13                |
+| Article14                |
+| Article16                |
+| Article17                |
+| Article18                |
+| Article19                |
+| Article21                |
+| Article22                |
+| Article23                |
+| Article25                |
++--------------------------+
+15 rows in set (0.00 sec)
+
+mysql> Select article as 'Articles with No Comments' from Articles where id in
+    -> (select articles.id from articles left join comments
+    -> on articles.id = Comments.article_id
+    -> group by articles.id
+    -> having count(comment) = 0);
++---------------------------+
+| Articles with No Comments |
++---------------------------+
+| Article4                  |
+| Article5                  |
+| Article7                  |
+| Article9                  |
+| Article12                 |
+| Article13                 |
+| Article14                 |
+| Article16                 |
+| Article17                 |
+| Article18                 |
+| Article19                 |
+| Article21                 |
+| Article22                 |
+| Article23                 |
+| Article25                 |
++---------------------------+
+15 rows in set (0.00 sec)
+
+5. Write a query to select article which has maximum comments.
+
+mysql> Select Articles.Article as 'Article with Maximum Comments', count(Comment) as No_of_Comments from Articles, Comments
+    -> where Articles.id=Comments.Article_id
+    -> group by Articles.id
+    -> order by No_of_Comments desc
+    -> limit 1;
++-------------------------------+----------------+
+| Article with Maximum Comments | No_of_Comments |
++-------------------------------+----------------+
+| Article15                     |              3 |
++-------------------------------+----------------+
+1 row in set (0.00 sec)
+
+6. Write a query to select article which does not have more than one comment by the same user ( do this using left join and group by )
+
+mysql> Select articles.id, article
+    -> From Articles left join Comments
+    -> on Articles.id = Comments.article_id
+    -> group by Articles.id
+    -> having Count(Comments.user_id) = Count(Distinct Comments.user_id);
++----+-----------+
+| id | article   |
++----+-----------+
+|  1 | Article1  |
+|  2 | Article2  |
+|  3 | Article3  |
+|  4 | Article4  |
+|  5 | Article5  |
+|  6 | Article6  |
+|  7 | Article7  |
+|  8 | Article8  |
+|  9 | Article9  |
+| 10 | Article10 |
+| 11 | Article11 |
+| 12 | Article12 |
+| 13 | Article13 |
+| 14 | Article14 |
+| 15 | Article15 |
+| 16 | Article16 |
+| 17 | Article17 |
+| 18 | Article18 |
+| 19 | Article19 |
+| 20 | Article20 |
+| 21 | Article21 |
+| 22 | Article22 |
+| 23 | Article23 |
+| 24 | Article24 |
+| 25 | Article25 |
++----+-----------+
+25 rows in set (0.00 sec)
